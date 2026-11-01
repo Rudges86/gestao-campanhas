@@ -97,7 +97,7 @@ jobs:
       - name: Gerar JAR/WAR final
         run: mvn package -DskipTests # Pula testes aqui pois já rodaram antes
 
-      # Opcional: Salva o JAR final gerado na aba "Artifacts" do GitHub
+      # Opcional: Salva o JAR final gerado na aba "Artifacts" do GitHub actions
       - name: Upload do Artefato Final (JAR)
         uses: actions/upload-artifact@v4
         with:
