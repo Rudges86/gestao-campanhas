@@ -1,12 +1,7 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+# For more information see: https://github.com
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Java CI with Maven
+name: Java CI with Maven and Docker
 
 on:
   push:
@@ -14,18 +9,18 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
 
-  # HABILITA O BOTÃO MANUAL COM ESCOLHA DE INPUT
   workflow_dispatch:
     inputs:
       versao_jdk:
         description: 'Selecione a versão da JDK para rodar o Pipeline'
         required: true
-        default: '17'
+        default: '21'
         type: choice
         options:
           - '11'
           - '17'
           - '21'
+
 jobs:
   #-----------------------------
   # Etapa 1: build
@@ -33,37 +28,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    # 1→ Faz checkout do código do repositório
-    - name: Checkout do código
-      uses: actions/checkout@v4
-    # 2→ Configura a jdk 
-    - name: Set up JDK ${{ github.event.inputs.versao_jdk || '21' }}
-      uses: actions/setup-java@v4
-      with:
-        java-version: ${{ github.event.inputs.versao_jdk || '21' }}
-        distribution: 'temurin'
-        cache: maven
-        
-    - name: Build
-      run: mvn clean compile
+      - name: Checkout do código
+        uses: actions/checkout@v4
 
-        # Salva as classes compiladas para o próximo job usar
-    - name: Upload dos arquivos compilados
-      uses: actions/upload-artifact@v4
-      with:
-        name: binnaries-and-target
-        path: |
-                 target/
-                 pom.xml 
-      
-    
-      
+      - name: Set up JDK ${{ github.event.inputs.versao_jdk || '21' }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ github.event.inputs.versao_jdk || '21' }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build
+        run: mvn -B clean compile
+
+      - name: Upload dos arquivos compilados
+        uses: actions/upload-artifact@v4
+        with:
+          name: binnaries-and-target
+          path: |
+            target/
+            pom.xml 
+
   # ----------------------------------------------------
   # ETAPA 2: TESTES (Só roda se o Build passar)
   # ----------------------------------------------------
   test:
     runs-on: ubuntu-latest
-    needs: build # <-- ESTA LINHA CRIA A DEPENDÊNCIA
+    needs: build
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -75,21 +66,20 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # Baixa a pasta 'target' gerada no job anterior
       - name: Download dos arquivos compilados
         uses: actions/download-artifact@v4
         with:
           name: binnaries-and-target
 
       - name: Executar Testes
-        run: mvn test
+        run: mvn -B test
 
   # ----------------------------------------------------
-  # ETAPA 3: EMPACOTAMENTO / DEPLOY (Só roda se os Testes passarem)
+  # ETAPA 3: EMPACOTAMENTO E DOCKER (Só roda se os Testes passarem)
   # ----------------------------------------------------
   package:
     runs-on: ubuntu-latest
-    needs: test # <-- Só roda se o job 'test' passar
+    needs: test
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -107,9 +97,26 @@ jobs:
           name: binnaries-and-target
 
       - name: Gerar JAR/WAR final
-        run: mvn package -DskipTests # Pula testes aqui pois já rodaram antes
+        run: mvn -B package -DskipTests --file pom.xml
 
-      # Opcional: Salva o JAR final gerado na aba "Artifacts" do GitHub actions
+      # NOVO: Realiza o login no Docker Hub usando seus Secrets
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # NOVO: Build e Push apontando para a pasta docker/
+      - name: Build e Push da Imagem Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile # <-- CAMINHO ALTERADO PARA PROCURAR NA PASTA DOCKER
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/meu-app-java:${{ github.ref_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/meu-app-java:latest
+
       - name: Upload do Artefato Final (JAR)
         uses: actions/upload-artifact@v4
         with:

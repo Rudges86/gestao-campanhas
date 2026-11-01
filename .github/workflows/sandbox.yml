@@ -18,7 +18,7 @@ jobs:
   # =========================================================================
   # ETAPA PRINCIPAL 1: CI E DOCKER (Contém as sub-etapas sequenciais)
   # =========================================================================
-  ci-and-docker:
+  build:
     runs-on: ubuntu-latest
     steps:
       # Sub-etapa 1: Faz checkout do código do repositório
@@ -48,12 +48,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Sub-etapa 6: Cria a imagem Docker e envia para o Docker Hub
+          # Sub-etapa 6: Cria a imagem Docker e envia para o Docker Hub
       - name: Build e Push da Imagem Docker
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./docker/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/meu-app-java:${{ github.ref_name }}
