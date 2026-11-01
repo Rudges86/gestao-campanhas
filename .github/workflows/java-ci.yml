@@ -14,6 +14,18 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
 
+  # HABILITA O BOTÃO MANUAL COM ESCOLHA DE INPUT
+  workflow_dispatch:
+    inputs:
+      versao_jdk:
+        description: 'Selecione a versão da JDK para rodar o Pipeline'
+        required: true
+        default: '17'
+        type: choice
+        options:
+          - '11'
+          - '17'
+          - '21'
 jobs:
   #-----------------------------
   # Etapa 1: build
@@ -25,10 +37,10 @@ jobs:
     - name: Checkout do código
       uses: actions/checkout@v4
     # 2→ Configura a jdk 
-    - name: Set up JDK 21
+    - name: Set up JDK ${{ github.event.inputs.versao_jdk || '21' }}
       uses: actions/setup-java@v4
       with:
-        java-version: '21'
+        java-version: ${{ github.event.inputs.versao_jdk || '21' }}
         distribution: 'temurin'
         cache: maven
         
@@ -56,10 +68,10 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar o JDK 17
+      - name: Configurar o JDK ${{ github.event.inputs.versao_jdk || '21' }}
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ github.event.inputs.versao_jdk || '21' }}
           distribution: 'temurin'
           cache: 'maven'
 
@@ -82,10 +94,10 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar o JDK 17
+      - name: Configurar o JDK ${{ github.event.inputs.versao_jdk || '21' }}
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ github.event.inputs.versao_jdk || '21' }}
           distribution: 'temurin'
           cache: 'maven'
 
