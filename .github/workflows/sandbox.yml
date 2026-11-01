@@ -13,12 +13,6 @@ on:
           - '11'
           - '17'
           - '21'
-      ambiente:
-        description: 'Contexto de Sandbox'
-        required: true
-        default: 'sandbox-teste'
-        type: string
-
 jobs:
   sandbox-run:
     runs-on: ubuntu-latest
