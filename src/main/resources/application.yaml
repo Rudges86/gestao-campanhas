@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: gestao-campanha
+server:
+  port: 8444
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8443/eureka
+      instance:
+        prefer-ip-address: true
+        lease-renewal-interval-in-seconds: 30
+        lease-expiration-duration-in-seconds: 30
