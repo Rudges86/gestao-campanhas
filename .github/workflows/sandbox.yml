@@ -1,0 +1,40 @@
+name: Workflow Sandbox
+
+# Deixa o workflow EXCLUSIVAMENTE manual
+on:
+  workflow_dispatch:
+    inputs:
+      versao_jdk:
+        description: 'Selecione a versão da JDK'
+        required: true
+        default: '17'
+        type: choice
+        options:
+          - '11'
+          - '17'
+          - '21'
+      ambiente:
+        description: 'Contexto de Sandbox'
+        required: true
+        default: 'sandbox-teste'
+        type: string
+
+jobs:
+  sandbox-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout da branch selecionada
+        uses: actions/checkout@v4 # O checkout já baixa automaticamente a branch selecionada na interface
+
+      - name: Configurar JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ github.event.inputs.versao_jdk }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Executando no ambiente de Sandbox
+        run: |
+          echo "Rodando o pipeline na branch: ${{ github.ref_name }}"
+          echo "Ambiente alvo: ${{ github.event.inputs.ambiente }}"
+          mvn -B package --file pom.xml
